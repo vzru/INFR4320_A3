@@ -75,15 +75,6 @@ public class GameController : MonoBehaviour
         ai.SetSideAI(side);
         playerSide = "X";
         SetPlayerColors(playerX, playerO);
-        //playerSide = side;
-        //if (playerSide == "X")
-        //{
-        //    SetPlayerColors(playerX, playerO);
-        //}
-        //else
-        //{
-        //    SetPlayerColors(playerO, playerX);
-        //}
         StartGame();
     }
 
@@ -140,12 +131,10 @@ public class GameController : MonoBehaviour
                     }
                 }
             }
-            Debug.Log("Current Move: " + move + ", Current Score: " + score);
             if (move >= 0)
             {
                 buttonList[move].text = ai.GetSideAI();
                 buttonList[move].GetComponentInParent<Button>().interactable = false;
-                Debug.Log("AI Picks Move: " + move);
                 ai.alpha = -10000;
                 ai.beta = 10000;
             }
@@ -158,6 +147,7 @@ public class GameController : MonoBehaviour
         }
     }
 
+    // Check for Win Condition and Swaps the player to the next player's turn
     public void EndTurn()
     {
         moveCount++;
@@ -238,6 +228,7 @@ public class GameController : MonoBehaviour
         gameOverText.text = value;
     }
 
+    // Restart Game, Reset all game values
     public void RestartGame()
     {
         moveCount = 0;
@@ -254,6 +245,7 @@ public class GameController : MonoBehaviour
         startInfo.SetActive(true);
     }
 
+    // Makes the board active
     void SetBoardInteractable(bool toggle)
     {
         for (int i = 0; i < buttonList.Length; i++)
@@ -302,12 +294,15 @@ public class AI
         return side;
     }
 
+    // Recursive Loop that returns the sum of all branches in the next step nodes by passing in the game state with the next player and all the moves done until now
     public int GetNextMove(spaceState[] gameState, string playerTurn, int moves)
     {
         spaceState[] currentState = gameState;
         spaceState currentPlayer = (playerTurn == "X") ? spaceState.X : spaceState.O;
 
         int currentMoves = ++moves;
+        
+        // Check if either players has met the win condition and returns a value back up the recursive function
         if (currentState[0] == currentPlayer && currentState[1] == currentPlayer && currentState[2] == currentPlayer)
         {
             if(playerTurn == side) {
@@ -403,6 +398,7 @@ public class AI
             string nextPlayer = (playerTurn == "X") ? "O" : "X";
             int score = 0;
 
+            // Loops through all spaces for any possible next spots
             for (int i = 0; i < currentState.Length; i++)
             {
                 if (currentState[i] == spaceState.BLANK)
@@ -411,18 +407,16 @@ public class AI
                     score += GetNextMove(currentState, nextPlayer, currentMoves);
                     currentState[i] = spaceState.BLANK;
 
+                    // Checking for Alpha Beta Pruning
                     if(playerTurn != side && score < alpha)
                     {
-                        //Debug.Log("Branch Pruned: " + score + " Beta: " + beta);
                         break;
                     }
                     beta = score;
-                    //Debug.Log("Score: " + score + " Beta Updated: " + beta);
                 }
             }
             if(playerTurn == side && alpha < beta)
             {
-                //Debug.Log("Alpha Updated: " + alpha + " Beta: " + beta);
                 alpha = beta;
             }
             return score;
