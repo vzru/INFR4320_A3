@@ -1,8 +1,11 @@
-﻿using System.Collections;
+﻿// Victor Zhang 100421055 Feb 25, 2020
+
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+// Enum for each individual space state
 public enum spaceState
 {
     BLANK = 0,
@@ -10,6 +13,7 @@ public enum spaceState
     O = -1
 }
 
+// Player Container Class
 [System.Serializable]
 public class Player
 {
@@ -18,6 +22,7 @@ public class Player
     public Button button;
 }
 
+// Player Color Container Class
 [System.Serializable]
 public class PlayerColor
 {
@@ -25,12 +30,13 @@ public class PlayerColor
     public Color textColor;
 }
 
+// Controls the whole game
 public class GameController : MonoBehaviour
 {
-    private int moveCount;
-    public Text[] buttonList;
-    public spaceState[] gameState;
-    private string playerSide;
+    private int moveCount;              // Amount of moves since start of game
+    public Text[] buttonList;           // List of all the space text references
+    public spaceState[] gameState;      // List of all the states of the board
+    private string playerSide;          // Current player
 
     public GameObject gameOverPanel;
     public Text gameOverText;
@@ -42,17 +48,20 @@ public class GameController : MonoBehaviour
     public PlayerColor activePlayerColor;
     public PlayerColor inactivePlayerColor;
 
+    // AI Class
     public AI ai;
 
+    // Initialization
     private void Awake()
     {
         SetGameControllerOnButtons();
         gameOverPanel.SetActive(false);
-        moveCount = 0;
         restartButton.SetActive(false);
+        moveCount = 0;
         ai = new AI();
     }
 
+    // Set reference for each space
     void SetGameControllerOnButtons()
     {
         for (int i = 0; i < buttonList.Length; i++)
@@ -63,7 +72,6 @@ public class GameController : MonoBehaviour
 
     public void SetSide(string side)
     {
-        // Need to modify for AI selection
         ai.SetSideAI(side);
         playerSide = "X";
         SetPlayerColors(playerX, playerO);
@@ -97,6 +105,7 @@ public class GameController : MonoBehaviour
 
     public void Update()
     {
+        // Checking for the AI's Turn to make a move
         if (playerSide == ai.GetSideAI())
         {
             int move = -1;
@@ -137,6 +146,8 @@ public class GameController : MonoBehaviour
                 buttonList[move].text = ai.GetSideAI();
                 buttonList[move].GetComponentInParent<Button>().interactable = false;
                 Debug.Log("AI Picks Move: " + move);
+                ai.alpha = -10000;
+                ai.beta = 10000;
             }
             EndTurn();
         }
@@ -269,9 +280,12 @@ public class GameController : MonoBehaviour
     }
 }
 
+// AI Code Processing
 public class AI
 {
     private string side = "";
+    public int alpha = -10000;
+    public int beta = 10000;
 
     public void SetSideAI(string s)
     {
@@ -391,7 +405,20 @@ public class AI
                     currentState[i] = (nextPlayer == "X") ? spaceState.X : spaceState.O;
                     score += GetNextMove(currentState, nextPlayer, currentMoves);
                     currentState[i] = spaceState.BLANK;
+
+                    if(playerTurn != side && score < alpha)
+                    {
+                        //Debug.Log("Branch Pruned: " + score + " Beta: " + beta);
+                        break;
+                    }
+                    beta = score;
+                    //Debug.Log("Score: " + score + " Beta Updated: " + beta);
                 }
+            }
+            if(playerTurn == side && alpha < beta)
+            {
+                //Debug.Log("Alpha Updated: " + alpha + " Beta: " + beta);
+                alpha = beta;
             }
             return score;
         }
