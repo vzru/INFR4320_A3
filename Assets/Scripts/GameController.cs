@@ -151,6 +151,11 @@ public class GameController : MonoBehaviour
             }
             EndTurn();
         }
+
+        if(Input.GetKeyDown(KeyCode.Q))
+        {
+            Application.Quit();
+        }
     }
 
     public void EndTurn()
