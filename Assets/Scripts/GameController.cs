@@ -3,6 +3,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+public enum spaceState
+{
+    BLANK = 0,
+    X = 1,
+    O = -1
+}
+
 [System.Serializable]
 public class Player
 {
@@ -22,6 +29,7 @@ public class GameController : MonoBehaviour
 {
     private int moveCount;
     public Text[] buttonList;
+    public spaceState[] gameState;
     private string playerSide;
 
     public GameObject gameOverPanel;
@@ -34,14 +42,15 @@ public class GameController : MonoBehaviour
     public PlayerColor activePlayerColor;
     public PlayerColor inactivePlayerColor;
 
+    public AI ai;
+
     private void Awake()
     {
         SetGameControllerOnButtons();
         gameOverPanel.SetActive(false);
         moveCount = 0;
         restartButton.SetActive(false);
-        //playerSide = "X";
-        //SetPlayerColors(playerX, playerO);
+        ai = new AI();
     }
 
     void SetGameControllerOnButtons()
@@ -55,15 +64,18 @@ public class GameController : MonoBehaviour
     public void SetSide(string side)
     {
         // Need to modify for AI selection
-        playerSide = side;
-        if (playerSide == "X")
-        {
-            SetPlayerColors(playerX, playerO);
-        }
-        else
-        {
-            SetPlayerColors(playerO, playerX);
-        }
+        ai.SetSideAI(side);
+        playerSide = "X";
+        SetPlayerColors(playerX, playerO);
+        //playerSide = side;
+        //if (playerSide == "X")
+        //{
+        //    SetPlayerColors(playerX, playerO);
+        //}
+        //else
+        //{
+        //    SetPlayerColors(playerO, playerX);
+        //}
         StartGame();
     }
 
@@ -72,11 +84,62 @@ public class GameController : MonoBehaviour
         SetPlayerButtons(false);
         SetBoardInteractable(true);
         startInfo.SetActive(false);
+        for (int i = 0; i < gameState.Length; i++)
+        {
+            gameState[i] = spaceState.BLANK;
+        }
     }
 
     public string GetPlayerSide()
     {
         return playerSide;
+    }
+
+    public void Update()
+    {
+        if (playerSide == ai.GetSideAI())
+        {
+            int move = -1;
+            int score = -10000;
+            for (int i = 0; i < buttonList.Length; i++)
+            {
+                if(buttonList[i].text == "")
+                {
+                    gameState[i] = spaceState.BLANK;
+                }
+                else if(buttonList[i].text == "X")
+                {
+                    gameState[i] = spaceState.X;
+                }
+                else if(buttonList[i].text == "O")
+                {
+                    gameState[i] = spaceState.O;
+                }
+            }
+            for (int i = 0; i < gameState.Length; i++)
+            {
+                if (gameState[i] == spaceState.BLANK)
+                {
+                    gameState[i] = (ai.GetSideAI() == "X") ? spaceState.X : spaceState.O;
+                    int tempScore = ai.GetNextMove(gameState, playerSide, moveCount);
+                    gameState[i] = spaceState.BLANK;
+
+                    if (tempScore > score)
+                    {
+                        move = i;
+                        score = tempScore;
+                    }
+                }
+            }
+            Debug.Log("Current Move: " + move + ", Current Score: " + score);
+            if (move >= 0)
+            {
+                buttonList[move].text = ai.GetSideAI();
+                buttonList[move].GetComponentInParent<Button>().interactable = false;
+                Debug.Log("AI Picks Move: " + move);
+            }
+            EndTurn();
+        }
     }
 
     public void EndTurn()
@@ -137,6 +200,7 @@ public class GameController : MonoBehaviour
         }
         restartButton.SetActive(true);
         SetPlayerColorsInactive();
+        ai.SetSideAI("");
     }
 
     void ChangeSides()
@@ -160,8 +224,6 @@ public class GameController : MonoBehaviour
 
     public void RestartGame()
     {
-        //playerSide = "X";
-        //SetPlayerColors(playerX, playerO);
         moveCount = 0;
 
         for (int i = 0; i < buttonList.Length; i++)
@@ -204,5 +266,134 @@ public class GameController : MonoBehaviour
     {
         playerX.button.interactable = toggle;
         playerO.button.interactable = toggle;
+    }
+}
+
+public class AI
+{
+    private string side = "";
+
+    public void SetSideAI(string s)
+    {
+        side = s;
+    }
+
+    public string GetSideAI()
+    {
+        return side;
+    }
+
+    public int GetNextMove(spaceState[] gameState, string playerTurn, int moves)
+    {
+        spaceState[] currentState = gameState;
+        spaceState currentPlayer = (playerTurn == "X") ? spaceState.X : spaceState.O;
+
+        int currentMoves = ++moves;
+        if (currentState[0] == currentPlayer && currentState[1] == currentPlayer && currentState[2] == currentPlayer)
+        {
+            if(playerTurn == side) {
+                return 1;
+            }
+            else {
+                return -1;
+            }
+        }
+        else if (currentState[3] == currentPlayer && currentState[4] == currentPlayer && currentState[5] == currentPlayer)
+        {
+            if (playerTurn == side)
+            {
+                return 1;
+            }
+            else
+            {
+                return -1;
+            }
+        }
+        else if (currentState[6] == currentPlayer && currentState[7] == currentPlayer && currentState[8] == currentPlayer)
+        {
+            if (playerTurn == side)
+            {
+                return 1;
+            }
+            else
+            {
+                return -1;
+            }
+        }
+        else if (currentState[0] == currentPlayer && currentState[3] == currentPlayer && currentState[6] == currentPlayer)
+        {
+            if (playerTurn == side)
+            {
+                return 1;
+            }
+            else
+            {
+                return -1;
+            }
+        }
+        else if (currentState[1] == currentPlayer && currentState[4] == currentPlayer && currentState[7] == currentPlayer)
+        {
+            if (playerTurn == side)
+            {
+                return 1;
+            }
+            else
+            {
+                return -1;
+            }
+        }
+        else if (currentState[2] == currentPlayer && currentState[5] == currentPlayer && currentState[8] == currentPlayer)
+        {
+            if (playerTurn == side)
+            {
+                return 1;
+            }
+            else
+            {
+                return -1;
+            }
+        }
+        else if (currentState[0] == currentPlayer && currentState[4] == currentPlayer && currentState[8] == currentPlayer)
+        {
+            if (playerTurn == side)
+            {
+                return 1;
+            }
+            else
+            {
+                return -1;
+            }
+        }
+        else if (currentState[2] == currentPlayer && currentState[4] == currentPlayer && currentState[6] == currentPlayer)
+        {
+            if (playerTurn == side)
+            {
+                return 1;
+            }
+            else
+            {
+                return -1;
+            }
+        }
+        else if (currentMoves >= 9)
+        {
+            return 0;
+        }
+        else
+        {
+            string nextPlayer = (playerTurn == "X") ? "O" : "X";
+            int score = 0;
+
+            for (int i = 0; i < currentState.Length; i++)
+            {
+                if (currentState[i] == spaceState.BLANK)
+                {
+                    currentState[i] = (nextPlayer == "X") ? spaceState.X : spaceState.O;
+                    score += GetNextMove(currentState, nextPlayer, currentMoves);
+                    currentState[i] = spaceState.BLANK;
+                }
+            }
+            return score;
+        }
     }
 }
